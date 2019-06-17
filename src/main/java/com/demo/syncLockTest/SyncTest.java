@@ -1,48 +1,53 @@
 package com.demo.syncLockTest;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.runner.RunnerException;
 
 public class SyncTest {
     private static int count;
     
-    private static int num = 10;
-    private static int maxValue = 1000000;
+    private static int num = 1;
+    private static int maxValue = 1000;
     private static String lock = "lock";
      
-    public static void main(String[] args) {
-    	SyncTest test = new SyncTest();
-
-		long start = System.currentTimeMillis();
-
-		List<Thread> list = new ArrayList<Thread>();
+	public static void main(String[] args) throws RunnerException {
+		Counter lockTest = new SyncTest().new Counter();
+		long startTime = System.currentTimeMillis();
+		CountDownLatch latch = new CountDownLatch(num);
 		for (int i = 0; i < num; i++) {
-			Thread thread = new Thread(test.new Counter());
-			thread.start();
-			list.add(thread);
+			new Thread(() -> {
+				for (int cur = 0; cur < maxValue; cur++) {
+					lockTest.add();
+				}
+				latch.countDown();
+			}).start();
 		}
-
 		try {
-			for (Thread thread : list) {
-				thread.join();
-			}
+			latch.await();
 		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		long endTime = System.currentTimeMillis();
 
-		long end = System.currentTimeMillis();
-		System.out.println("TestSync执行时长：" + (end - start)+ ", count：" + count);
-    	
-    }
+		System.out.println("SyncTest执行时长：" + (endTime - startTime) + ", count" + count);
+
+	}
     
-    class Counter implements Runnable {
-		public void run() {
-			 for (int j = 0; j < maxValue; j++) {
-                 synchronized(lock) {
-                 	count++;
-                 	//System.out.println("count：" + count);
-                 }
-             }
+    
+	class Counter {
+		public void add() {
+			 synchronized(lock) {
+              	count++;
+              	//System.out.println("count：" + count);
+              }
 		}
 	}
 

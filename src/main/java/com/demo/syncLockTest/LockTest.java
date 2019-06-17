@@ -1,54 +1,49 @@
 package com.demo.syncLockTest;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class LockTest {
-	 private static int count;
-	    
-	    private static int num = 10;
-	    private static int maxValue = 1000000;
-	    private final Lock lock = new ReentrantLock();
-	    
-	    public static void main(String[] args) {
-	    	LockTest test = new LockTest();
+	private static int count;
 
-			long start = System.currentTimeMillis();
+	private static int num = 1;
+	private static int maxValue = 1000;
+	private final Lock lock = new ReentrantLock();
 
-			List<Thread> list = new ArrayList<Thread>();
-			for (int i = 0; i < num; i++) {
-				Thread thread = new Thread(test.new Counter());
-				thread.start();
-				list.add(thread);
-			}
-
-			try {
-				for (Thread thread : list) {
-					thread.join();
+	public static void main(String[] args) {
+		Counter lockTest = new LockTest().new Counter();
+		long startTime = System.currentTimeMillis();
+		CountDownLatch latch = new CountDownLatch(num);
+		for (int i = 0; i < num; i++) {
+			new Thread(() -> {
+				for (int cur = 0; cur < maxValue; cur++) {
+					lockTest.add();
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+				latch.countDown();
+			}).start();
+		}
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		long endTime = System.currentTimeMillis();
 
-			long end = System.currentTimeMillis();
-			System.out.println("LockTest执行时长：" + (end - start) + ", count：" + count);
-	    	
-	    }
-	    
-	    class Counter implements Runnable {
-			public void run() {
-				 for (int j = 0; j < maxValue; j++) {
-					 lock.lock();
-					 try {
-	                 	count++;
-	                 	//System.out.println("count：" + count);
-	                 }finally {
-	                	 lock.unlock();
-	                 }
-	             }
+		System.out.println("LockTest执行时长：" + (endTime - startTime) + ", count" + count);
+
+	}
+
+	class Counter {
+		public void add() {
+			lock.lock();
+			try {
+				count++;
+			} finally {
+				lock.unlock();
 			}
 		}
+	}
 
 }
