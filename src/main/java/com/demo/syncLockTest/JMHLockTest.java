@@ -31,7 +31,7 @@ public class JMHLockTest {
 	}
 
 	@Benchmark
-	@Threads(1)
+	@Threads(50)
 	public void add() {
 
 		for (int i = 0; i < 500000; i++) {
